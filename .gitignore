@@ -1,0 +1,27 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Archivos de variables de entorno
+.env
+
+# Archivos de claves o secretos
+Claves.txt
+secrets.txt
+
+# Bases de datos locales de SQLite
+*.db
+*.sqlite3
+
+# Carpetas de instancia de Flask
+instance/
+
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Otros
+.DS_Store
