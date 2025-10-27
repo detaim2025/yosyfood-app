@@ -1,0 +1,146 @@
+<!-- START OF FILE templates/analisis.html (NEW FILE) -->
+
+{% extends 'base.html' %}
+{% block title %}Análisis y Reportes - YosyFood{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="fw-bold text-lila">Análisis de Operaciones</h2>
+</div>
+
+<!-- FORMULARIO DE FILTROS -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('analisis') }}" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="casino" class="form-label">Casino</label>
+        <select name="casino" id="casino" class="form-select">
+          <option value="Casino 1" {% if casino == 'Casino 1' %}selected{% endif %}>Casino 1</option>
+          <option value="Casino 2" {% if casino == 'Casino 2' %}selected{% endif %}>Casino 2</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+        <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+      </div>
+      <div class="col-md-3">
+        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+        <input type="date" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-lila w-100">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TARJETAS DE MÉTRICAS (KPIs) -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="card text-center h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title text-success">Ingresos Totales</h5>
+        <p class="card-text fs-2 fw-bold">${{ "%.2f"|format(total_ingresos) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title text-danger">Costos Totales</h5>
+        <p class="card-text fs-2 fw-bold">${{ "%.2f"|format(total_costos) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title {% if ganancia_bruta >= 0 %}text-primary{% else %}text-danger{% endif %}">Ganancia Bruta</h5>
+        <p class="card-text fs-2 fw-bold">${{ "%.2f"|format(ganancia_bruta) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title text-info">Refrigerios Servidos</h5>
+        <p class="card-text fs-2 fw-bold">{{ total_refrigerios }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header card-header-lila"><h5 class="mb-0 text-lila">Ventas Diarias</h5></div>
+      <div class="card-body">
+        <canvas id="ventasDiariasChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header card-header-lila"><h5 class="mb-0 text-lila">Desglose de Costos</h5></div>
+      <div class="card-body">
+        <canvas id="costosChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT PARA INICIALIZAR GRÁFICOS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- GRÁFICO DE VENTAS DIARIAS (BARRAS) ---
+    const ctxVentas = document.getElementById('ventasDiariasChart');
+    if (ctxVentas) {
+        new Chart(ctxVentas, {
+            type: 'bar',
+            data: {
+                labels: {{ ventas_por_dia.labels | tojson }},
+                datasets: [{
+                    label: 'Ingresos por Ventas ($)',
+                    data: {{ ventas_por_dia.data | tojson }},
+                    backgroundColor: 'rgba(168, 85, 247, 0.6)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // --- GRÁFICO DE DESGLOSE DE COSTOS (DONA) ---
+    const ctxCostos = document.getElementById('costosChart');
+    if (ctxCostos) {
+        new Chart(ctxCostos, {
+            type: 'doughnut',
+            data: {
+                labels: {{ desglose_costos.labels | tojson }},
+                datasets: [{
+                    label: 'Costos ($)',
+                    data: {{ desglose_costos.data | tojson }},
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',  // Rojo para Compras
+                        'rgba(249, 115, 22, 0.7)', // Naranja para Gastos
+                        'rgba(59, 130, 246, 0.7)'  // Azul para Inversiones
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

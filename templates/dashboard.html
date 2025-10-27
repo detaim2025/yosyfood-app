@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - YosyFood{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="fw-bold text-lila mb-3">Bienvenido a YosyFood 🍴</h1>
+    {% if user.is_authenticated %}
+        <p class="lead">Hola, {{ user.username }} 👋</p>
+    {% else %}
+        <p class="lead text-muted">Controla tu restaurante, inventarios, ventas y compras desde un solo lugar.</p>
+    {% endif %}
+</div>
+
+<div class="row text-center">
+    <div class="col-md-4 mb-4">
+        <div class="shadow-card">
+            <h4 class="text-lila">Inventario</h4>
+            <p class="display-6">{{ total_inventario }}</p>
+            <a href="{{ url_for('inventario_list') }}" class="btn btn-lila">Ver Inventario</a>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="shadow-card">
+            <h4 class="text-lila">Ventas</h4>
+            <p class="display-6">{{ total_ventas }}</p>
+            <a href="{{ url_for('venta_list') }}" class="btn btn-lila">Ver Ventas</a>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="shadow-card">
+            <h4 class="text-lila">Compras</h4>
+            <p class="display-6">{{ total_compras }}</p>
+            <a href="{{ url_for('compra_list') }}" class="btn btn-lila">Ver Compras</a>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5 text-center">
+    <p class="text-muted">Desarrollado con Flask + Bootstrap 5 💜</p>
+</div>
+{% endblock %}

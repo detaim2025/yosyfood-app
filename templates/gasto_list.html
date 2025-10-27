@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Gastos - YosyFood{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h2 class="fw-bold text-lila">Registro de Gastos</h2><a href="{{ url_for('gasto_nuevo', casino=casino) }}" class="btn btn-lila">💸 Registrar Nuevo Gasto</a></div>
+<div class="d-flex justify-content-center mb-4"><div class="btn-group" role="group"><a href="{{ url_for('gasto_list', casino='Casino 1') }}" class="btn {% if casino == 'Casino 1' %}btn-lila{% else %}btn-outline-secondary{% endif %}">🏢 Casino 1</a><a href="{{ url_for('gasto_list', casino='Casino 2') }}" class="btn {% if casino == 'Casino 2' %}btn-lila{% else %}btn-outline-secondary{% endif %}">🏢 Casino 2</a></div></div>
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if items %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th>Fecha</th><th>Descripción</th><th>Servicio</th><th class="text-end">Costo</th><th>Acciones</th></tr></thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ item.fecha.strftime('%d/%m/%Y') }}</td>
+            <td>{{ item.descripcion }}</td>
+            <td>{{ item.proveedor }}</td>
+            <td class="text-end fw-bold">${{ "%.2f"|format(item.costo) }}</td>
+            <td>
+              <a href="{{ url_for('gasto_editar', gasto_id=item.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+              <form action="{{ url_for('gasto_eliminar', gasto_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este gasto?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<div class="alert alert-info text-center">No hay gastos registrados.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

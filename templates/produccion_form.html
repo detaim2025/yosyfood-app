@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Producción{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header card-header-lila"><h3 class="mb-0 text-lila fw-bold">Registrar Producción de Refrigerios</h3></div>
+  <div class="card-body p-4">
+    <form action="{{ url_for('produccion_nueva', casino=casino) }}" method="POST">
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Tipo de Refrigerio a Producir</label><select name="refrigerio_id" class="form-select" required><option value="">-- Seleccione una plantilla --</option>{% for r in refrigerios %}<option value="{{ r.id }}">{{ r.nombre }} ({{ r.turno }})</option>{% endfor %}</select></div>
+        <div class="col-md-6"><label class="form-label">Cantidad a Producir</label><input type="number" step="1" min="1" name="cantidad_producida" class="form-control" required></div>
+        <div class="col-md-12"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control" value="{{ current_user.username if current_user.is_authenticated else '' }}" required></div>
+      </div>
+      <div class="text-end mt-4"><a href="{{ url_for('produccion_list') }}" class="btn btn-secondary">⬅️ Cancelar</a><button type="submit" class="btn btn-lila">🍳 Producir y Descontar Inventario</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

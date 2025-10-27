@@ -1,0 +1,251 @@
+<!-- START OF FILE compras_form.html (COMPLETELY UPDATED) -->
+
+{% extends 'base.html' %}
+{% block title %}Registrar Compra - YosyFood{% endblock %}
+
+{% block content %}
+<div class.="row g-4">
+    <!-- Columna Izquierda: Agregar Productos y Carrito -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header card-header-lila d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 text-lila fw-bold">1. Agregar Insumo a la Compra</h4>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#nuevoProductoModal">
+                    📦 Crear Nuevo Insumo
+                </button>
+            </div>
+            <div class="card-body">
+                <form id="form-agregar-producto" autocomplete="off">
+                    <div class="mb-3">
+                        <label for="producto_select" class="form-label">Buscar Insumo Existente</label>
+                        <select id="producto_select" class="form-select form-select-lg">
+                            <option value="" data-id="" selected>-- Seleccione un insumo --</option>
+                            {% for p in productos %}
+                            <option value="{{ p.id }}">{{ p.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col">
+                            <label for="cantidad" class="form-label">Cantidad Comprada</label>
+                            <input type="number" step="0.01" id="cantidad" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="col">
+                            <label for="costo_unitario" class="form-label">Costo por Unidad ($)</label>
+                            <input type="number" step="0.01" id="costo_unitario" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-lila btn-lg">➕ Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header card-header-lila"><h4 class="mb-0 text-lila fw-bold">2. Carrito de Compras</h4></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead><tr><th>Insumo</th><th class="text-center">Cantidad</th><th class="text-end">Costo Unit.</th><th class="text-end">Subtotal</th><th></th></tr></thead>
+                        <tbody id="compra-carrito-body"></tbody>
+                    </table>
+                </div>
+                <div id="compra-carrito-vacio" class="text-center p-4 text-muted">El carrito está vacío.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Resumen y Finalización -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm sticky-top" style="top: 20px;">
+             <div class="card-header card-header-lila"><h4 class="mb-0 text-lila fw-bold">3. Finalizar Compra en {{ casino }}</h4></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">Total Compra:</h3><h3 class="mb-0 fw-bold" id="total-compra">$0.00</h3>
+                </div><hr>
+                <form id="form-finalizar-compra">
+                    <div class="mb-3"><label for="proveedor" class="form-label">Proveedor</label><input type="text" id="proveedor" class="form-control" required></div>
+                    <div class="mb-3"><label for="comprador" class="form-label">Comprador</label><input type="text" id="comprador" class="form-control" value="{{ current_user.username if current_user.is_authenticated else '' }}" required></div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">🛒 Registrar Compra</button>
+                        <a href="{{ url_for('compra_list', casino=casino) }}" class="btn btn-outline-secondary">⬅️ Ver Historial de Compras</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Nuevo Producto -->
+<div class="modal fade" id="nuevoProductoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-header-lila"><h5 class="modal-title text-lila fw-bold">Crear Nuevo Insumo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="form-nuevo-producto">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Nombre</label><input type="text" id="nuevo_nombre" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Unidad (kg, pza, lt)</label><input type="text" id="nuevo_unidad" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Código de Barras (Opcional)</label><input type="text" id="nuevo_codigo" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Precio de Venta ($)</label><input type="number" step="0.01" id="nuevo_precio" class="form-control" value="0"></div>
+            <div class="col-md-6"><label class="form-label">Stock Inicial</label><input type="number" step="0.01" id="nuevo_cantidad" class="form-control" value="0"></div>
+            <div class="col-md-6"><label class="form-label">Stock Mínimo</label><input type="number" step="0.01" id="nuevo_minimo" class="form-control" value="0"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" id="guardar-nuevo-producto" class="btn btn-lila">Guardar Insumo</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const casino = "{{ casino }}";
+    let compraCarrito = [];
+
+    // --- ELEMENTOS DEL DOM ---
+    const formAgregar = document.getElementById('form-agregar-producto');
+    const selectProducto = document.getElementById('producto_select');
+    const formFinalizar = document.getElementById('form-finalizar-compra');
+    const carritoBody = document.getElementById('compra-carrito-body');
+    const totalCompraEl = document.getElementById('total-compra');
+    const carritoVacioEl = document.getElementById('compra-carrito-vacio');
+    
+    // --- EVENT LISTENERS ---
+    formAgregar.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedOption = selectProducto.options[selectProducto.selectedIndex];
+        if (!selectedOption || !selectedOption.value) return showInfoModal('⚠️ Atención', 'Debe seleccionar un insumo de la lista.');
+        
+        const productoId = parseInt(selectedOption.value);
+        const productoNombre = selectedOption.text;
+        const cantidad = parseFloat(document.getElementById('cantidad').value);
+        const costoUnitario = parseFloat(document.getElementById('costo_unitario').value);
+
+        if (isNaN(cantidad) || cantidad <= 0 || isNaN(costoUnitario) || costoUnitario < 0) {
+            return showInfoModal('⚠️ Atención', 'La cantidad y el costo deben ser números válidos y positivos.');
+        }
+        
+        agregarProductoAlCarrito({ id: productoId, nombre: productoNombre, cantidad, costo_unitario: costoUnitario });
+        formAgregar.reset();
+        selectProducto.value = '';
+    });
+
+    formFinalizar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const proveedor = document.getElementById('proveedor').value.trim();
+        const comprador = document.getElementById('comprador').value.trim();
+
+        if (compraCarrito.length === 0) return showInfoModal('⚠️ Atención', 'El carrito de compras está vacío.');
+        if (!proveedor || !comprador) return showInfoModal('⚠️ Atención', 'Debe especificar el proveedor y el comprador.');
+
+        try {
+            const response = await fetch('/compras/registrar_multiple', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carrito: compraCarrito, proveedor, comprador, casino })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Error desconocido');
+
+            showInfoModal('✅ ¡Éxito!', result.mensaje);
+            const acceptButton = document.getElementById('infoModalAcceptButton');
+            acceptButton.onclick = () => window.location.href = `{{ url_for('compra_list') }}?casino=${casino}`;
+        } catch (error) {
+            showInfoModal('❌ Error', 'Error al registrar la compra: ' + error.message);
+        }
+    });
+
+    document.getElementById('guardar-nuevo-producto').addEventListener('click', async function() {
+        const nuevoProducto = {
+            nombre: document.getElementById('nuevo_nombre').value.trim(),
+            unidad: document.getElementById('nuevo_unidad').value.trim(),
+            codigo_barras: document.getElementById('nuevo_codigo').value.trim(),
+            precio: document.getElementById('nuevo_precio').value,
+            cantidad: document.getElementById('nuevo_cantidad').value,
+            minimo: document.getElementById('nuevo_minimo').value,
+            casino: casino
+        };
+
+        if (!nuevoProducto.nombre || !nuevoProducto.unidad) {
+            return alert('El nombre y la unidad son obligatorios.');
+        }
+        
+        try {
+            const response = await fetch('/api/inventario/nuevo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(nuevoProducto)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Error al crear el producto.');
+
+            // Añadir el nuevo producto a la lista desplegable y seleccionarlo
+            const newOption = new Option(result.nombre, result.id);
+            selectProducto.add(newOption);
+            selectProducto.value = result.id;
+            bootstrap.Modal.getInstance(document.getElementById('nuevoProductoModal')).hide();
+            showInfoModal('✅ Éxito', `El insumo "${result.nombre}" ha sido creado.`);
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // --- FUNCIONES AUXILIARES ---
+    function agregarProductoAlCarrito(producto) {
+        const itemExistente = compraCarrito.find(item => item.id === producto.id);
+        if (itemExistente) {
+            itemExistente.cantidad += producto.cantidad;
+            itemExistente.costo_unitario = producto.costo_unitario; // Actualizar al último costo ingresado
+        } else {
+            compraCarrito.push(producto);
+        }
+        actualizarVistaCarrito();
+    }
+
+    function actualizarVistaCarrito() {
+        carritoBody.innerHTML = '';
+        let totalCompra = 0;
+        carritoVacioEl.style.display = compraCarrito.length === 0 ? 'block' : 'none';
+
+        compraCarrito.forEach((item, index) => {
+            const subtotal = item.cantidad * item.costo_unitario;
+            totalCompra += subtotal;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><span class="fw-bold">${item.nombre}</span></td>
+                <td class="text-center align-middle">${item.cantidad}</td>
+                <td class="text-end align-middle">$${item.costo_unitario.toFixed(2)}</td>
+                <td class="text-end align-middle fw-bold">$${subtotal.toFixed(2)}</td>
+                <td class="text-center align-middle"><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${index}">&times;</button></td>
+            `;
+            carritoBody.appendChild(tr);
+        });
+
+        totalCompraEl.textContent = `$${totalCompra.toFixed(2)}`;
+        
+        document.querySelectorAll('.btn-eliminar-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                compraCarrito.splice(parseInt(this.dataset.index), 1);
+                actualizarVistaCarrito();
+            });
+        });
+    }
+
+    function showInfoModal(title, message) { /* ... (código del modal de ventas) ... */ }
+    // Copiamos la función del modal de ventas para reutilizarla
+    function showInfoModal(title, message) {
+        const infoModalEl = document.getElementById('infoModal');
+        if (infoModalEl) {
+            const infoModal = bootstrap.Modal.getOrCreateInstance(infoModalEl);
+            document.getElementById('infoModalLabel').textContent = title;
+            document.getElementById('infoModalBody').innerHTML = message;
+            infoModal.show();
+        } else {
+            alert(`${title}\n\n${message.replace(/<br>/g, '\n')}`);
+        }
+    }
+});
+</script>
+{% endblock %}

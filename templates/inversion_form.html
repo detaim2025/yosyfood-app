@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{% if item %}Editar{% else %}Registrar{% endif %} Inversión - YosyFood{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header card-header-lila"><h3 class="mb-0 text-lila fw-bold">{% if item %}Editar Inversión{% else %}Registrar Nueva Inversión{% endif %}</h3></div>
+  <div class="card-body p-4">
+    <form action="{{ url_for('inversion_nueva') if not item else url_for('inversion_editar', inversion_id=item.id) }}" method="POST">
+      <div class="row g-3">
+        <div class="col-md-12"><label for="descripcion" class="form-label">Descripción</label><input type="text" class="form-control" name="descripcion" value="{{ item.descripcion if item else '' }}" required></div>
+        <div class="col-md-6"><label for="costo" class="form-label">Costo Total ($)</label><input type="number" step="0.01" class="form-control" name="costo" value="{{ item.costo if item else '' }}" required></div>
+        <div class="col-md-6"><label for="fecha" class="form-label">Fecha de Compra</label><input type="date" class="form-control" name="fecha" value="{{ item.fecha.strftime('%Y-%m-%d') if item else '' }}" required></div>
+        <div class="col-md-6"><label for="proveedor" class="form-label">Proveedor</label><input type="text" class="form-control" name="proveedor" value="{{ item.proveedor if item else '' }}" required></div>
+        <div class="col-md-6"><label for="comprador" class="form-label">Comprador</label><input type="text" class="form-control" name="comprador" value="{{ item.comprador if item else current_user.username if current_user.is_authenticated else '' }}" required></div>
+        <div class="col-12"><label for="casino" class="form-label">Casino</label><select class="form-select" name="casino" required><option value="Casino 1" {% if (item and item.casino == 'Casino 1') or casino == 'Casino 1' %}selected{% endif %}>Casino 1</option><option value="Casino 2" {% if (item and item.casino == 'Casino 2') or casino == 'Casino 2' %}selected{% endif %}>Casino 2</option></select></div>
+      </div>
+      <div class="text-end mt-4"><a href="{{ url_for('inversion_list') }}" class="btn btn-secondary">⬅️ Cancelar</a><button type="submit" class="btn btn-lila">💾 Guardar Cambios</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

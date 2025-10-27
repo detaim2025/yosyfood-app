@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Consumo de Refrigerios{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h2 class="fw-bold text-lila">Consumo Diario de Refrigerios</h2><a href="{{ url_for('consumo_nuevo', casino=casino) }}" class="btn btn-lila">📝 Registrar Consumo</a></div>
+<div class="d-flex justify-content-center mb-4"><div class="btn-group" role="group"><a href="{{ url_for('consumo_list', casino='Casino 1') }}" class="btn {% if casino == 'Casino 1' %}btn-lila{% else %}btn-outline-secondary{% endif %}">🏢 Casino 1</a><a href="{{ url_for('consumo_list', casino='Casino 2') }}" class="btn {% if casino == 'Casino 2' %}btn-lila{% else %}btn-outline-secondary{% endif %}">🏢 Casino 2</a></div></div>
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if consumos %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th>Fecha</th><th>Descripción</th><th>Cantidad</th><th>Composición</th><th>Acciones</th></tr></thead>
+        <tbody>
+          {% for consumo in consumos %}
+          <tr>
+            <td>{{ consumo.fecha.strftime('%d/%m/%Y') }}</td>
+            <td><strong>{{ consumo.descripcion }}</strong></td>
+            <td>{{ consumo.cantidad_total }}</td>
+            <td>
+                <ul class="list-unstyled mb-0">
+                {% for item in consumo.items %}
+                    <li>{{ item.producto.nombre }}: {{ item.cantidad_consumida }} {{ item.producto.unidad }}</li>
+                {% endfor %}
+                </ul>
+            </td>
+            <td>
+              <a href="{{ url_for('consumo_editar', consumo_id=consumo.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+              <form action="{{ url_for('consumo_eliminar', consumo_id=consumo.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro? Se restaurará el stock en el inventario.');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<div class="alert alert-info text-center">No hay consumos registrados para {{ casino }}.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

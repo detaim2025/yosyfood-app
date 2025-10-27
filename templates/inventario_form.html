@@ -1,0 +1,57 @@
+<!-- START OF FILE inventario_form.html -->
+
+{% extends 'base.html' %}
+{% block title %}{% if item %}Editar Insumo{% else %}Nuevo Insumo{% endif %} - YosyFood{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header card-header-lila">
+    <h3 class="mb-0 text-lila fw-bold">{% if item %}Editar Insumo{% else %}Agregar Nuevo Insumo{% endif %}</h3>
+  </div>
+  <div class="card-body p-4">
+    <form action="{{ url_for('inventario_nuevo') if not item else url_for('inventario_editar', item_id=item.id) }}" method="POST">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="nombre" class="form-label">Nombre del insumo</label>
+          <input type="text" class="form-control" id="nombre" name="nombre" value="{{ item.nombre if item else '' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label for="codigo_barras" class="form-label">Código de Barras</label>
+          <input type="text" class="form-control" id="codigo_barras" name="codigo_barras" value="{{ item.codigo_barras if item else '' }}">
+        </div>
+
+        <div class="col-md-6">
+          <label for="cantidad" class="form-label">Cantidad Actual</label>
+          <input type="number" step="0.01" class="form-control" id="cantidad" name="cantidad" value="{{ item.cantidad if item else '0' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label for="unidad" class="form-label">Unidad (kg, g, lt, pza...)</label>
+          <input type="text" class="form-control" id="unidad" name="unidad" value="{{ item.unidad if item else '' }}" required>
+        </div>
+
+        <div class="col-md-6">
+          <label for="minimo" class="form-label">Stock Mínimo</label>
+          <input type="number" step="0.01" class="form-control" id="minimo" name="minimo" value="{{ item.minimo if item else '0' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label for="precio" class="form-label">Precio de Venta ($)</label>
+          <input type="number" step="0.01" class="form-control" id="precio" name="precio" value="{{ item.precio if item else '0' }}" required>
+        </div>
+
+        <div class="col-12">
+          <label for="casino" class="form-label">Casino</label>
+          <select class="form-select" id="casino" name="casino" required>
+            <option value="Casino 1" {% if item and item.casino == 'Casino 1' %}selected{% endif %}>Casino 1</option>
+            <option value="Casino 2" {% if item and item.casino == 'Casino 2' %}selected{% endif %}>Casino 2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="text-end mt-4">
+        <a href="{{ url_for('inventario_list') }}" class="btn btn-secondary">⬅️ Cancelar</a>
+        <button type="submit" class="btn btn-lila">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

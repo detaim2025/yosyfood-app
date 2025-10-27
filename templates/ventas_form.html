@@ -1,0 +1,251 @@
+<!-- START OF FILE ventas_form.html (FINAL VERSION WITH ALL FEATURES) -->
+
+{% extends 'base.html' %}
+{% block title %}Punto de Venta - YosyFood{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Columna Izquierda: Agregar Productos y Carrito -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header card-header-lila">
+                <h4 class="mb-0 text-lila fw-bold">1. Agregar Producto</h4>
+            </div>
+            <div class="card-body">
+                <form id="form-agregar-producto" autocomplete="off">
+                    <div class="mb-3">
+                        <label for="producto_select" class="form-label">Buscar por Nombre</label>
+                        <select id="producto_select" class="form-select form-select-lg">
+                            <option value="" data-codigo="" selected>-- Seleccione un producto --</option>
+                            {% for p in productos %}
+                            <option value="{{ p.id }}" data-codigo="{{ p.codigo_barras }}">{{ p.nombre }} (Stock: {{ p.cantidad }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col">
+                            <label for="codigo_barras" class="form-label">O escanear Código de Barras</label>
+                            <input type="text" id="codigo_barras" class="form-control form-control-lg">
+                        </div>
+                        <div class="col-3">
+                            <label for="cantidad" class="form-label">Cantidad</label>
+                            <input 
+                                type="number" 
+                                id="cantidad" 
+                                value="1" 
+                                step="1"  
+                                min="1"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                class="form-control form-control-lg"
+                           >
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-lila btn-lg">➕ Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header card-header-lila">
+                <h4 class="mb-0 text-lila fw-bold">2. Carrito de Compras</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-end">Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="carrito-body"></tbody>
+                    </table>
+                </div>
+                <div id="carrito-vacio" class="text-center p-4 text-muted">El carrito está vacío.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Resumen y Pago -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm sticky-top" style="top: 20px;">
+             <div class="card-header card-header-lila">
+                <h4 class="mb-0 text-lila fw-bold">3. Finalizar Venta en {{ casino }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">Total:</h3>
+                    <h3 class="mb-0 fw-bold" id="total-general">$0.00</h3>
+                </div>
+                <hr>
+                <form id="form-finalizar-venta">
+                    <div class="mb-3">
+                         <label for="vendedor" class="form-label">Vendedor</label>
+                         <input type="text" id="vendedor" class="form-control" value="{{ current_user.username if current_user.is_authenticated else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                         <label for="pago" class="form-label">Cliente Paga con ($)</label>
+                         <input type="number" step="0.01" id="pago" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">💸 Finalizar y Cobrar</button>
+                         <a href="{{ url_for('venta_list', casino=casino) }}" class="btn btn-outline-secondary">⬅️ Ver Historial de Ventas</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const casino = "{{ casino }}";
+    let carrito = [];
+
+    // --- ELEMENTOS DEL DOM ---
+    const formAgregar = document.getElementById('form-agregar-producto');
+    const selectProducto = document.getElementById('producto_select');
+    const inputCodigo = document.getElementById('codigo_barras');
+    const inputCantidad = document.getElementById('cantidad');
+    const formFinalizar = document.getElementById('form-finalizar-venta');
+    const carritoBody = document.getElementById('carrito-body');
+    const totalGeneralEl = document.getElementById('total-general');
+    const carritoVacioEl = document.getElementById('carrito-vacio');
+    
+    // --- EVENT LISTENERS ---
+    selectProducto.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        inputCodigo.value = selectedOption.dataset.codigo || '';
+    });
+
+    inputCodigo.addEventListener('input', function() {
+        const option = Array.from(selectProducto.options).find(opt => opt.dataset.codigo === this.value);
+        selectProducto.value = option ? option.value : '';
+    });
+
+    formAgregar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const codigo = inputCodigo.value.trim();
+        const cantidad = parseInt(inputCantidad.value, 10);
+
+        if (!codigo || isNaN(cantidad) || cantidad <= 0) {
+            showInfoModal('⚠️ Atención', 'Por favor, seleccione o escanee un producto y una cantidad entera válida.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/producto/${codigo}?casino=${casino}`);
+            if (!response.ok) throw new Error('Producto no encontrado con ese código de barras.');
+            const producto = await response.json();
+
+            agregarProductoAlCarrito(producto, cantidad);
+
+            inputCodigo.value = '';
+            selectProducto.value = '';
+            inputCantidad.value = '1';
+            inputCodigo.focus();
+        } catch (error) {
+            showInfoModal('❌ Error', error.message);
+        }
+    });
+
+    formFinalizar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const pago = parseFloat(document.getElementById('pago').value);
+        const vendedor = document.getElementById('vendedor').value.trim();
+        const totalGeneral = parseFloat(totalGeneralEl.textContent.replace('$', ''));
+
+        if (carrito.length === 0) return showInfoModal('⚠️ Atención', 'El carrito está vacío.');
+        if (!vendedor) return showInfoModal('⚠️ Atención', 'Debe ingresar el nombre del vendedor.');
+        if (isNaN(pago) || pago < totalGeneral) return showInfoModal('⚠️ Atención', 'El monto del pago es insuficiente.');
+
+        try {
+            const response = await fetch('/ventas/registrar_multiple', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carrito, pago, vendedor, casino })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Error desconocido');
+
+            showInfoModal('✅ ¡Éxito!', result.mensaje);
+
+            const acceptButton = document.getElementById('infoModalAcceptButton');
+            acceptButton.onclick = () => {
+                 window.location.href = `{{ url_for('venta_list') }}?casino=${casino}`;
+            };
+        } catch (error) {
+            showInfoModal('❌ Error', 'Error al registrar la venta: ' + error.message);
+        }
+    });
+
+    // --- FUNCIONES AUXILIARES ---
+    function agregarProductoAlCarrito(producto, cantidad) {
+        const itemExistente = carrito.find(item => item.id === producto.id);
+
+        if (itemExistente) {
+            const nuevaCantidad = itemExistente.cantidad + cantidad;
+            if (producto.stock < nuevaCantidad) {
+                showInfoModal('Stock Insuficiente', `No se puede agregar ${cantidad} de ${producto.nombre}.<br>Disponible: ${producto.stock}.<br>Ya tienes ${itemExistente.cantidad} en el carrito.`);
+                return;
+            }
+            itemExistente.cantidad = nuevaCantidad;
+        } else {
+            if (producto.stock < cantidad) {
+                showInfoModal('Stock Insuficiente', `No se puede agregar ${cantidad} de ${producto.nombre}.<br>Disponible: ${producto.stock}.`);
+                return;
+            }
+            carrito.push({ ...producto, cantidad: cantidad });
+        }
+        actualizarVistaCarrito();
+    }
+
+    function actualizarVistaCarrito() {
+        carritoBody.innerHTML = '';
+        let totalGeneral = 0;
+        carritoVacioEl.style.display = carrito.length === 0 ? 'block' : 'none';
+
+        carrito.forEach((item, index) => {
+            const subtotal = item.precio * item.cantidad;
+            totalGeneral += subtotal;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><span class="fw-bold">${item.nombre}</span><br><small class="text-muted">$${item.precio.toFixed(2)} / ${item.unidad}</small></td>
+                <td class="text-center align-middle">${item.cantidad}</td>
+                <td class="text-end align-middle">$${item.precio.toFixed(2)}</td>
+                <td class="text-end align-middle fw-bold">$${subtotal.toFixed(2)}</td>
+                <td class="text-center align-middle"><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${index}">&times;</button></td>
+            `;
+            carritoBody.appendChild(tr);
+        });
+
+        totalGeneralEl.textContent = `$${totalGeneral.toFixed(2)}`;
+        
+        document.querySelectorAll('.btn-eliminar-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                carrito.splice(parseInt(this.dataset.index), 1);
+                actualizarVistaCarrito();
+            });
+        });
+    }
+
+    function showInfoModal(title, message) {
+        const infoModalEl = document.getElementById('infoModal');
+        if (infoModalEl) {
+            const infoModal = bootstrap.Modal.getOrCreateInstance(infoModalEl);
+            document.getElementById('infoModalLabel').textContent = title;
+            document.getElementById('infoModalBody').innerHTML = message;
+            infoModal.show();
+        } else {
+            // Fallback si el modal no está en la página por alguna razón
+            alert(`${title}\n\n${message.replace(/<br>/g, '\n')}`);
+        }
+    }
+});
+</script>
+{% endblock %}

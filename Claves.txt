@@ -1,0 +1,2 @@
+aiven.io:
+URI DEL SERVICIO: postgres://avnadmin:AVNS_W9_vo3-at82CTly2Xc9@yosyfood-jorgecastro8040-288d.e.aivencloud.com:19637/defaultdb?sslmode=require
